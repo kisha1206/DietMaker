@@ -282,6 +282,7 @@ const F={
   salad:{n:"salad (cucumber, onion, tomato)",per:1,u:"plate",k:30,p:1,c:6,f:0,step:1,g:"f"},
   fruit:{n:"seasonal fruit",pl:"seasonal fruits",per:1,u:"",k:80,p:.5,c:20,f:.3,step:1,g:"f"},
   chaas:{n:"chaas (buttermilk)",per:250,u:"ml",k:40,p:2,c:3,f:2,step:50,g:"f"},
+  hung:{n:"hung curd or Greek yogurt (low-fat)",per:100,u:"g",k:70,p:10,c:4,f:1.5,step:50,g:"p",max:400},
   ghee:{n:"ghee",per:1,u:"tsp",k:45,p:0,c:0,f:5,step:1,g:"f"}
 };
 const PLURAL={katori:"katoris",plate:"plates",bowl:"bowls",tbsp:"tbsp",tsp:"tsp"};
@@ -426,35 +427,74 @@ function pickDay(s,d){
   });
 }
 
-function solve(s,t,picks){
+function solveCore(s,t,picks){
   const powder=s.scoops?{k:0,p:s.scoops*s.ps,c:s.scoops*2.5,f:s.scoops*1.5}:Z();
   powder.k=powder.p*4+powder.c*4+powder.f*9;
-  let P=Z(),C=Z(),X=Z();
-  picks.forEach(m=>m.opt.i.forEach(([k,q])=>{const g=F[k].g,mm=macros(k,q);if(g==="p")P=add(P,mm);else if(g==="c")C=add(C,mm);else X=add(X,mm)}));
-  const Pt=t.p-powder.p-X.p, Kt=t.kcal-powder.k-X.k;
   const clamp=(v,lo,hi)=>Math.min(hi,Math.max(lo,v));
+  let P=Z(),C=Z(),X=Z(),B=Z();
+  picks.forEach(m=>m.opt.i.forEach(([k,q])=>{const g=F[k].g,mm=macros(k,q);if(m.fixed)B=add(B,mm);else if(g==="p")P=add(P,mm);else if(g==="c")C=add(C,mm);else X=add(X,mm)}));
+  // On low-calorie days, fixed extras (peanut butter, sabzi, ghee) shrink too.
+  let fx=clamp((t.kcal-powder.k-B.k)/(P.k+C.k+X.k),.4,1);
+  X={k:X.k*fx,p:X.p*fx,c:X.c*fx,f:X.f*fx};
+  const Pt=t.p-powder.p-X.p-B.p, Kt=t.kcal-powder.k-X.k-B.k;
   let a,b;const det=P.p*C.k-C.p*P.k;
   if(det>0){a=(Pt*C.k-C.p*Kt)/det;b=(P.p*Kt-Pt*P.k)/det}else{a=b=Kt/(P.k+C.k)}
   // Keep meals proportionate: both levers stay near the overall calorie scale s0,
   // and calories win over protein when the two can't both be met.
   const s0=Kt/(P.k+C.k);
-  a=clamp(a,Math.max(.4,.65*s0),Math.min(2.4,1.6*s0));
-  b=clamp((Kt-a*P.k)/C.k,Math.max(.3,.55*s0),Math.min(2.6,1.6*s0));
-  a=clamp((Kt-b*C.k)/P.k,Math.max(.4,.65*s0),Math.min(2.4,1.6*s0));
-  const meals=picks.map(m=>{
-    let tot=Z();
-    const items=m.opt.i.map(([k,q])=>{
-      const x=F[k],sc=x.g==="p"?a:x.g==="c"?b:1;
-      let qq=Math.min(x.max||Infinity,Math.max(x.step,Math.round(q*sc/x.step)*x.step));
-      qq=Math.round(qq*10)/10;
-      const mm=macros(k,qq);tot=add(tot,mm);
-      return {key:k,q:qq,m:mm};
+  const aLo=Math.max(.4,.65*s0),aHi=Math.min(2.4,Math.max(1.6*s0,1.3)),bLo=Math.max(.2,.3*s0),bHi=Math.min(2.6,1.6*s0);
+  a=clamp(a,aLo,aHi);
+  b=clamp((Kt-a*P.k)/C.k,bLo,bHi);
+  a=clamp((Kt-b*C.k)/P.k,aLo,aHi);
+  const build=(a,b,fx)=>{
+    const meals=picks.map(m=>{
+      let tot=Z();
+      const items=m.opt.i.map(([k,q])=>{
+        const x=F[k],sc=m.fixed?1:x.g==="p"?a:x.g==="c"?b:fx;
+        let qq=Math.min(x.max||Infinity,Math.max(x.step,Math.round(q*sc/x.step)*x.step));
+        qq=Math.round(qq*10)/10;
+        const mm=macros(k,qq);tot=add(tot,mm);
+        return {key:k,q:qq,m:mm};
+      });
+      return {...m,items,tot};
     });
-    return {...m,items,tot};
-  });
-  let day=meals.reduce((acc,m)=>add(acc,m.tot),Z());
-  day=add(day,powder);
+    return {meals,day:add(meals.reduce((acc,m)=>add(acc,m.tot),Z()),powder)};
+  };
+  let {meals,day}=build(a,b,fx);
+  // Rounding and minimum portions can push a low-calorie day over; trim carbs, then extras.
+  for(let i=0;i<24&&day.k>t.kcal*1.04;i++){
+    if(b>.12)b*=.88;else if(fx>.25)fx*=.85;else if(a>.45)a*=.9;else break;
+    ({meals,day}=build(a,b,fx));
+  }
   return {meals,powder,day};
+}
+
+// Lean protein top-ups, used when a low-calorie day can't reach the protein target
+// from the meals alone. Only foods that fit the diet and chosen sources are used.
+const BOOST=[["white","egg",8],["chicken","chicken",200],["fish","fish",200],["soya","soya",80],["hung",null,400]];
+function solve(s,t,picks){
+  const pool=BOOST.filter(([k,src])=>!src||s.src.includes(src));
+  const top={slot:"Protein top-up",time:"any meal",fixed:true,count:1,opt:{n:"",d:"veg",i:[],note:""}};
+  let r=solveCore(s,t,picks);
+  for(let it=0;it<10;it++){
+    const short=t.p-r.day.p;
+    if(short<=t.p*.03)break;
+    const used=new Map(top.opt.i);
+    const next=pool.find(([k,,max])=>(used.get(k)||0)<max);
+    if(!next)break;
+    const [k,,max]=next,x=F[k],perP=x.p/x.per;
+    const want=Math.min(max,(used.get(k)||0)+Math.ceil(short*1.15/perP/x.step)*x.step);
+    used.set(k,want);
+    top.opt.i=[...used.entries()];
+    r=solveCore(s,t,[...picks,top]);
+  }
+  if(top.opt.i.length){
+    const names=top.opt.i.map(([k])=>({white:"egg whites",chicken:"grilled chicken",fish:"grilled fish",soya:"soya chunks",hung:"hung curd"}[k]));
+    top.opt.n="Extra "+names.join(" and ");
+    top.opt.d=top.opt.i.some(([k])=>k==="chicken"||k==="fish")?"nonveg":top.opt.i.some(([k])=>k==="white")?"egg":"veg";
+    top.opt.note=s.live==="hostel"?"Added so you still hit your protein target on fewer calories. Boiled eggs (eat the whites), roasted soya nuts or a Greek yogurt cup from the store all work.":"Added so you still hit your protein target on fewer calories. Eat it with any meal.";
+  }
+  return r;
 }
 
 function render(){
