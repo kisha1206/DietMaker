@@ -36,7 +36,7 @@ h2{font:700 19px/1.2 var(--display);margin:0;text-wrap:balance}
 @media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
 form{display:flex;flex-direction:column;gap:14px}
-@media (min-width:861px){form.panel{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}}
+@media (min-width:861px){form.formcol{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}}
 .row2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
 label,.lbl{display:block;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
 input[type=number],select{width:100%;font:500 15px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
@@ -72,22 +72,37 @@ input:focus-visible,select:focus-visible,button:focus-visible,.seg input:focus-v
 .btn{font:600 13px var(--body);color:var(--leaf);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 11px;cursor:pointer}
 .btn:hover{border-color:var(--leaf)}
 .meals{display:flex;flex-direction:column;gap:10px}
-.meal{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:4px 16px;align-items:start}
-@media (max-width:620px){.meal{grid-template-columns:minmax(0,1fr) auto}.meal .slot{grid-column:1/-1}}
+.meal{background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.meal>summary{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:4px 16px;align-items:center;padding:12px 16px;cursor:pointer;list-style:none}
+.meal-body{padding:0 16px 14px calc(96px + 32px);display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.meal-body ul{align-self:stretch}
+@media (max-width:620px){.meal>summary{grid-template-columns:minmax(0,1fr) auto}.meal .slot{grid-column:1/-1}.meal-body{padding-left:16px}}
+summary::-webkit-details-marker{display:none}
+summary:focus-visible{outline:2px solid var(--leaf);outline-offset:-2px;border-radius:12px}
+.chev{width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin:0 4px 4px;flex:none}
+details[open]>summary .chev{transform:rotate(-135deg);margin:4px 4px 0}
+@media (prefers-reduced-motion:no-preference){.chev{transition:transform .15s}}
+.sec{background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.sec>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;cursor:pointer;list-style:none}
+.sec>summary .st{display:flex;flex-direction:column;gap:2px;min-width:0}
+.sec>summary .sv{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.sec[open]>summary .sv{display:none}
+.sec-body{padding:0 18px 18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.formcol{display:flex;flex-direction:column;gap:10px}
 .slot{font-size:12px;letter-spacing:.07em;text-transform:uppercase;font-weight:600;color:var(--muted);padding-top:3px}
 .slot small{display:block;letter-spacing:0;text-transform:none;font-weight:400;font-family:var(--mono)}
 .mname{display:flex;align-items:center;gap:8px;font:700 16px/1.3 var(--display)}
-.meal ul{margin:6px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:2px}
+.meal ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:2px}
 .meal li{display:flex;gap:10px;justify-content:space-between;font-size:14px;border-bottom:1px dashed var(--line);padding:3px 0}
 .meal li:last-child{border-bottom:0}
 .meal li .q{font-family:var(--mono);font-size:13px;color:var(--ink);white-space:nowrap}
 .meal li .p{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
-.mmac{grid-column:2/3;font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:4px}
-@media (max-width:620px){.mmac{grid-column:1/-1}}
+.mmac{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:2px}
 .note{font-size:13px;color:var(--muted);margin:4px 0 0}
 .total{display:flex;flex-wrap:wrap;gap:8px 22px;align-items:center;font-size:14px}
 .total b{font-family:var(--mono);font-weight:500}
 .warn{border-left:3px solid var(--haldi);background:var(--surface);padding:10px 14px;border-radius:0 10px 10px 0;font-size:14px;margin:0}
+.tips .panel{background:var(--bg)}
 .tips{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
 .tips ul{margin:8px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:5px;font-size:14px}
 .fine{font-size:12.5px;color:var(--muted);margin:0}
@@ -104,93 +119,110 @@ input:focus-visible,select:focus-visible,button:focus-visible,.seg input:focus-v
   </header>
 
   <div class="grid">
-    <form class="panel" id="f" autocomplete="off">
+    <form class="formcol" id="f" autocomplete="off">
       <p class="example" id="exampleNote">These are example details. Change them to yours and the plan updates as you type.</p>
-
-      <div>
-        <span class="lbl">I am a</span>
-        <div class="seg">
-          <label><input type="radio" name="sex" id="sex-m" value="m" checked><span>Man</span></label>
-          <label><input type="radio" name="sex" id="sex-f" value="f"><span>Woman</span></label>
-        </div>
-      </div>
-
-      <div class="row2">
-        <div><label for="w">Weight (kg)</label><input type="number" id="w" min="30" max="200" step="0.5" value="65"></div>
-        <div><label for="h">Height (cm)</label><input type="number" id="h" min="120" max="220" value="172"></div>
-        <div><label for="age">Age</label><input type="number" id="age" min="13" max="80" value="20"></div>
-      </div>
-
-      <div>
-        <label for="act">Activity</label>
-        <select id="act">
-          <option value="1.2">Mostly sitting, no workouts</option>
-          <option value="1.375">Light: gym 1 to 3 days a week</option>
-          <option value="1.55" selected>Moderate: gym 3 to 5 days a week</option>
-          <option value="1.725">Very active: gym 6 to 7 days a week</option>
-          <option value="1.9">Athlete or physical job plus training</option>
-        </select>
-      </div>
-
-      <div>
-        <span class="lbl">Food preference</span>
-        <div class="seg">
-          <label><input type="radio" name="diet" id="diet-veg" value="veg" checked><span><i class="mark veg"></i>Veg</span></label>
-          <label><input type="radio" name="diet" id="diet-egg" value="egg"><span><i class="mark nv"></i>Eggetarian</span></label>
-          <label><input type="radio" name="diet" id="diet-nonveg" value="nonveg"><span><i class="mark nv"></i>Non-veg</span></label>
-        </div>
-      </div>
-
-      <div>
-        <span class="lbl">Preferred protein sources</span>
-        <div class="seg" id="srcs" role="group" aria-label="Preferred protein sources"></div>
-        <p class="hint">Pick one or more. Meals are built around what you tick; dal, curd and milk are always included.</p>
-      </div>
-
-      <div>
-        <span class="lbl">Goal</span>
-        <div class="seg">
-          <label><input type="radio" name="goal" id="goal-gain" value="gain" checked><span>Gaining</span></label>
-          <label><input type="radio" name="goal" id="goal-cut" value="cut"><span>Cutting</span></label>
-          <label><input type="radio" name="goal" id="goal-recomp" value="recomp"><span>Recomposing</span></label>
-        </div>
-      </div>
-
-      <div>
-        <span class="lbl">Protein powder</span>
-        <div class="row2" style="grid-template-columns:1fr 1fr">
+      <details class="sec" id="g-you" open>
+        <summary><span class="st"><h2>About you</h2><span class="sv" id="g-you-v"></span></span><i class="chev" aria-hidden="true"></i></summary>
+        <div class="sec-body">
           <div>
-            <label for="scoops" style="font-size:11px">Scoops a day</label>
-            <select id="scoops">
-              <option value="0">None</option>
-              <option value="0.5">Half scoop</option>
-              <option value="1" selected>1 scoop</option>
-              <option value="1.5">1.5 scoops</option>
-              <option value="2">2 scoops</option>
+            <span class="lbl">I am a</span>
+            <div class="seg">
+              <label><input type="radio" name="sex" id="sex-m" value="m" checked><span>Man</span></label>
+              <label><input type="radio" name="sex" id="sex-f" value="f"><span>Woman</span></label>
+            </div>
+          </div>
+
+          <div class="row2">
+            <div><label for="w">Weight (kg)</label><input type="number" id="w" min="30" max="200" step="0.5" value="65"></div>
+            <div><label for="h">Height (cm)</label><input type="number" id="h" min="120" max="220" value="172"></div>
+            <div><label for="age">Age</label><input type="number" id="age" min="13" max="80" value="20"></div>
+          </div>
+
+          <div>
+            <label for="act">Activity</label>
+            <select id="act">
+              <option value="1.2">Mostly sitting, no workouts</option>
+              <option value="1.375">Light: gym 1 to 3 days a week</option>
+              <option value="1.55" selected>Moderate: gym 3 to 5 days a week</option>
+              <option value="1.725">Very active: gym 6 to 7 days a week</option>
+              <option value="1.9">Athlete or physical job plus training</option>
             </select>
           </div>
-          <div><label for="ps" style="font-size:11px">Protein per scoop (g)</label><input type="number" id="ps" min="10" max="40" value="24"></div>
         </div>
-        <p class="hint">Check the label on your tub. Most whey has 22 to 25 g per scoop.</p>
-      </div>
+      </details>
+      <details class="sec" id="g-goal" open>
+        <summary><span class="st"><h2>Your goal</h2><span class="sv" id="g-goal-v"></span></span><i class="chev" aria-hidden="true"></i></summary>
+        <div class="sec-body">
+          <div>
+            <span class="lbl" hidden>Goal</span>
+            <div class="seg">
+              <label><input type="radio" name="goal" id="goal-gain" value="gain" checked><span>Gaining</span></label>
+              <label><input type="radio" name="goal" id="goal-cut" value="cut"><span>Cutting</span></label>
+              <label><input type="radio" name="goal" id="goal-recomp" value="recomp"><span>Recomposing</span></label>
+            </div>
+          </div>
+        </div>
+      </details>
+      <details class="sec" id="g-food" open>
+        <summary><span class="st"><h2>Food and routine</h2><span class="sv" id="g-food-v"></span></span><i class="chev" aria-hidden="true"></i></summary>
+        <div class="sec-body">
+          <div>
+            <span class="lbl">Food preference</span>
+            <div class="seg">
+              <label><input type="radio" name="diet" id="diet-veg" value="veg" checked><span><i class="mark veg"></i>Veg</span></label>
+              <label><input type="radio" name="diet" id="diet-egg" value="egg"><span><i class="mark nv"></i>Eggetarian</span></label>
+              <label><input type="radio" name="diet" id="diet-nonveg" value="nonveg"><span><i class="mark nv"></i>Non-veg</span></label>
+            </div>
+          </div>
 
-      <div>
-        <span class="lbl">Where do you eat</span>
-        <div class="seg">
-          <label><input type="radio" name="live" id="live-hostel" value="hostel" checked><span>Hosteller (mess)</span></label>
-          <label><input type="radio" name="live" id="live-home" value="home"><span>Household (home food)</span></label>
+          <div>
+            <span class="lbl">Preferred protein sources</span>
+            <div class="seg" id="srcs" role="group" aria-label="Preferred protein sources"></div>
+            <p class="hint">Pick one or more. Meals are built around what you tick; dal, curd and milk are always included.</p>
+          </div>
+
+          <div>
+            <span class="lbl">Protein powder</span>
+            <div class="row2" style="grid-template-columns:1fr 1fr">
+              <div>
+                <label for="scoops" style="font-size:11px">Scoops a day</label>
+                <select id="scoops">
+                  <option value="0">None</option>
+                  <option value="0.5">Half scoop</option>
+                  <option value="1" selected>1 scoop</option>
+                  <option value="1.5">1.5 scoops</option>
+                  <option value="2">2 scoops</option>
+                </select>
+              </div>
+              <div><label for="ps" style="font-size:11px">Protein per scoop (g)</label><input type="number" id="ps" min="10" max="40" value="24"></div>
+            </div>
+            <p class="hint">Check the label on your tub. Most whey has 22 to 25 g per scoop.</p>
+          </div>
+
+          <div>
+            <span class="lbl">Where do you eat</span>
+            <div class="seg">
+              <label><input type="radio" name="live" id="live-hostel" value="hostel" checked><span>Hosteller (mess)</span></label>
+              <label><input type="radio" name="live" id="live-home" value="home"><span>Household (home food)</span></label>
+            </div>
+          </div>
         </div>
-      </div>
+      </details>
     </form>
 
     <section class="results" aria-live="polite">
-      <div class="targets" id="targets"></div>
-      <div class="bar" id="bar" aria-hidden="true"></div>
-      <p class="facts" id="facts"></p>
+      <details class="sec" id="g-targets" open>
+        <summary><span class="st"><h2>Daily targets</h2><span class="sv" id="g-targets-v"></span></span><i class="chev" aria-hidden="true"></i></summary>
+        <div class="sec-body">
+          <div class="targets" id="targets"></div>
+          <div class="bar" id="bar" aria-hidden="true"></div>
+          <p class="facts" id="facts"></p>
+        </div>
+      </details>
       <p class="warn" id="warn" hidden></p>
 
       <div class="daybar">
-        <h2>Your meal plan</h2>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h2>Your meal plan</h2><button class="btn" type="button" id="expand">Expand all</button></div>
         <div class="days" id="days" role="group" aria-label="Day of the week"></div>
       </div>
       <div class="meals" id="meals"></div>
@@ -201,8 +233,13 @@ input:focus-visible,select:focus-visible,button:focus-visible,.seg input:focus-v
         <span class="fine" id="copied"></span>
       </div>
 
+      <details class="sec" id="g-tips">
+        <summary><span class="st"><h2>Tips and notes</h2><span class="sv">Hostel or home tips, goal tips and how the numbers are worked out</span></span><i class="chev" aria-hidden="true"></i></summary>
+        <div class="sec-body">
       <div class="tips" id="tips"></div>
       <p class="fine">Targets use the Mifflin-St Jeor formula and standard sports nutrition ranges. Quantities are estimates for home-style cooking; mess portions vary, so weigh things once to calibrate your eye. If you have a medical condition, check the plan with a doctor or dietitian.</p>
+        </div>
+      </details>
     </section>
   </div>
 </div>
@@ -312,6 +349,8 @@ const $=id=>document.getElementById(id);
 const radio=n=>document.querySelector(`input[name=${n}]:checked`).value;
 let day=0, swaps={}; // swaps["day-slot"] = extra offset
 let lastText="";
+const openMeals=new Set();
+function syncExpand(){const all=[...document.querySelectorAll("#meals details")];$("expand").textContent=all.length&&all.every(x=>x.open)?"Collapse all":"Expand all"}
 
 function read(){
   const num=(id,d,lo,hi)=>{const v=parseFloat($(id).value);return isFinite(v)?Math.min(hi,Math.max(lo,v)):d};
@@ -420,24 +459,30 @@ function render(){
   const mac=m=>`${Math.round(m.k)} kcal · P ${Math.round(m.p)} g · C ${Math.round(m.c)} g · F ${Math.round(m.f)} g`;
   let html="",txt=[`Diet Maker plan, ${DAYS[day]}: ${t.kcal} kcal, protein ${t.p} g, carbs ${t.c} g, fat ${t.f} g`,""];
   r.meals.forEach((m,si)=>{
-    html+=`<article class="meal"><div class="slot">${m.slot}<small>${m.time}</small></div>
-      <div><div class="mname">${mark(m.opt.d)}<span>${m.opt.n}</span></div>
-      <ul>${m.items.map(it=>{const [q,n]=qtyText(it.key,it.q);return `<li><span><span class="q">${q}</span> ${n}</span><span class="p">${Math.round(it.m.p)} g P</span></li>`}).join("")}</ul>
-      ${m.opt.note?`<p class="note">${m.opt.note}</p>`:""}</div>
-      <div>${m.count>1?`<button class="btn" type="button" data-swap="${si}" aria-label="Swap ${m.slot.toLowerCase()} for another option">Swap</button>`:""}</div>
-      <div class="mmac">${mac(m.tot)}</div></article>`;
+    html+=`<details class="meal" data-slot="${m.slot}"${openMeals.has(m.slot)?" open":""}><summary><div class="slot">${m.slot}<small>${m.time}</small></div>
+      <div><div class="mname">${mark(m.opt.d)}<span>${m.opt.n}</span></div><div class="mmac">${mac(m.tot)}</div></div><i class="chev" aria-hidden="true"></i></summary>
+      <div class="meal-body"><ul>${m.items.map(it=>{const [q,n]=qtyText(it.key,it.q);return `<li><span><span class="q">${q}</span> ${n}</span><span class="p">${Math.round(it.m.p)} g P</span></li>`}).join("")}</ul>
+      ${m.opt.note?`<p class="note">${m.opt.note}</p>`:""}
+      ${m.count>1?`<button class="btn" type="button" data-swap="${si}" aria-label="Swap ${m.slot.toLowerCase()} for another option">Swap for another option</button>`:""}</div></details>`;
     txt.push(`${m.slot} (${m.time}): ${m.opt.n}`);
     m.items.forEach(it=>{const [q,n]=qtyText(it.key,it.q);txt.push(`  - ${q} ${n}`)});
   });
   if(s.scoops){
     const n=s.scoops>1?"Split into two shakes: one after your workout, one with breakfast.":"Take it with water after your workout, or with breakfast on rest days.";
-    html+=`<article class="meal"><div class="slot">Shake<small>post-workout</small></div>
-      <div><div class="mname">${mark("veg")}<span>Protein shake</span></div>
-      <ul><li><span><span class="q">${fmtN(s.scoops)} ${s.scoops>1?"scoops":"scoop"}</span> protein powder in water</span><span class="p">${Math.round(r.powder.p)} g P</span></li></ul>
-      <p class="note">${n}</p></div><div></div><div class="mmac">${mac(r.powder)}</div></article>`;
+    html+=`<details class="meal" data-slot="Shake"${openMeals.has("Shake")?" open":""}><summary><div class="slot">Shake<small>post-workout</small></div>
+      <div><div class="mname">${mark("veg")}<span>Protein shake</span></div><div class="mmac">${mac(r.powder)}</div></div><i class="chev" aria-hidden="true"></i></summary>
+      <div class="meal-body"><ul><li><span><span class="q">${fmtN(s.scoops)} ${s.scoops>1?"scoops":"scoop"}</span> protein powder in water</span><span class="p">${Math.round(r.powder.p)} g P</span></li></ul>
+      <p class="note">${n}</p></div></details>`;
     txt.push(`Shake: ${fmtN(s.scoops)} scoop protein powder in water`);
   }
   $("meals").innerHTML=html;
+  syncExpand();
+  // Collapsed-section summaries show the current choices.
+  const lab=n=>document.querySelector(`input[name=${n}]:checked`).nextElementSibling.textContent;
+  $("g-you-v").textContent=`${lab("sex")} · ${s.w} kg · ${s.h} cm · ${s.age} yrs · ${$("act").selectedOptions[0].textContent.split(":")[0]}`;
+  $("g-goal-v").textContent=lab("goal");
+  $("g-food-v").textContent=`${lab("diet")} · ${s.src.map(k=>SRC[k]).join(", ")} · ${s.scoops?fmtN(s.scoops)+" scoop powder":"no powder"} · ${lab("live")}`;
+  $("g-targets-v").textContent=`${t.kcal} kcal · P ${t.p} g · C ${t.c} g · F ${t.f} g`;
   const d=r.day, diff=v=>v>=0?"+"+Math.round(v):String(Math.round(v));
   $("total").innerHTML=`<strong>Day total</strong><span>Calories <b>${Math.round(d.k)}</b> <span class="fine">(${diff(d.k-t.kcal)})</span></span><span>Protein <b>${Math.round(d.p)} g</b> <span class="fine">(${diff(d.p-t.p)})</span></span><span>Carbs <b>${Math.round(d.c)} g</b></span><span>Fat <b>${Math.round(d.f)} g</b></span>`;
   txt.push("",`Day total: ${Math.round(d.k)} kcal, ${Math.round(d.p)} g protein`);
@@ -479,6 +524,7 @@ function load(){
   [["sex",s.sex],["diet",s.diet],["goal",s.goal],["live",s.live]].forEach(([n,v])=>{const el=$(n+"-"+v);if(el)el.checked=true});
   if(Array.isArray(s.src))chosen=s.src;
   $("exampleNote").hidden=true;
+  if(matchMedia("(max-width:860px)").matches)["g-you","g-goal","g-food"].forEach(id=>$(id).open=false);
 }
 
 $("f").addEventListener("input",e=>{if(e.target.name==="diet"||e.target.name==="src")return;$("exampleNote").hidden=true;swaps={};render()});
@@ -493,6 +539,8 @@ $("copy").addEventListener("click",()=>{
   const done=m=>{$("copied").textContent=m;setTimeout(()=>$("copied").textContent="",2500)};
   try{navigator.clipboard.writeText(lastText).then(()=>done("Copied. Paste it anywhere."),()=>done("Copy was blocked by this browser."))}catch(e){done("Copy was blocked by this browser.")}
 });
+$("meals").addEventListener("toggle",e=>{const d=e.target;if(!d.dataset||!d.dataset.slot)return;d.open?openMeals.add(d.dataset.slot):openMeals.delete(d.dataset.slot);syncExpand()},true);
+$("expand").addEventListener("click",()=>{const all=[...document.querySelectorAll("#meals details")];const open=!all.every(x=>x.open);all.forEach(x=>{x.open=open;open?openMeals.add(x.dataset.slot):openMeals.delete(x.dataset.slot)});syncExpand()});
 load();drawSrc();render();
 
 // PDF export: builds the whole week with jsPDF and hands it to the viewer through the downloads capability.
@@ -530,7 +578,7 @@ function buildPdf(){
   return doc.output("arraybuffer");
 }
 (async()=>{
-  // Inside claude.ai the page saves through the downloads capability; on a normal website jsPDF saves directly.
+  // Inside claude.ai the page saves through the downloads capability; on a normal website the browser saves directly.
   const dl=window.claude?.use?await window.claude.use("downloads"):{save:async({filename,data})=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type:"application/pdf"}));a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);return{status:"saved"}}};
   if(!dl||!window.jspdf)return;
   const b=$("pdf");b.hidden=false;
