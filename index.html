@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Diet Maker: enter your details and get calorie and macro targets with a 7-day Indian meal plan.">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Diet Maker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a details panel on the left, the day's thali plan on the right; stacks to one column on phones. */
+:root{
+  --bg:#f5f6f0; --surface:#ffffff; --ink:#1c2620; --muted:#5f6b63; --line:#dfe4d9;
+  --leaf:#2d6a3a; --leaf-soft:#e3eee2; --haldi:#c98a12; --chili:#b4472e; --brown:#7a3b1d;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"Instrument Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#111713; --surface:#18201b; --ink:#e5ebe3; --muted:#9aa79e; --line:#2a352e;
+  --leaf:#7cc08a; --leaf-soft:#1f3125; --haldi:#e5b44c; --chili:#e2765a; --brown:#c9814f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111713; --surface:#18201b; --ink:#e5ebe3; --muted:#9aa79e; --line:#2a352e;
+  --leaf:#7cc08a; --leaf-soft:#1f3125; --haldi:#e5b44c; --chili:#e2765a; --brown:#c9814f; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);padding-inline:16px;padding-block:20px 48px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px}
+h1{font:800 clamp(28px,5vw,40px)/1 var(--display);letter-spacing:-.02em;margin:0}
+h1 span{color:var(--leaf)}
+header p{margin:0;color:var(--muted);max-width:52ch}
+h2{font:700 19px/1.2 var(--display);margin:0;text-wrap:balance}
+.grid{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+form{display:flex;flex-direction:column;gap:14px}
+@media (min-width:861px){form.panel{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}}
+.row2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+label,.lbl{display:block;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+input[type=number],select{width:100%;font:500 15px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+input:focus-visible,select:focus-visible,button:focus-visible,.seg input:focus-visible+span{outline:2px solid var(--leaf);outline-offset:2px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg label{margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink);font-weight:500;cursor:pointer}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg span{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border:1px solid var(--line);border-radius:999px;background:var(--bg)}
+.seg input:checked+span{border-color:var(--leaf);background:var(--leaf-soft);color:var(--leaf);font-weight:600}
+.hint{font-size:12.5px;color:var(--muted);margin:5px 0 0}
+.example{font-size:12.5px;background:var(--leaf-soft);color:var(--leaf);border-radius:8px;padding:7px 10px;margin:0}
+/* FSSAI-style food marks */
+.mark{display:inline-grid;place-items:center;width:14px;height:14px;border:1.5px solid;border-radius:2px;flex:none}
+.mark::after{content:"";display:block}
+.mark.veg{border-color:var(--leaf)} .mark.veg::after{width:6px;height:6px;border-radius:50%;background:var(--leaf)}
+.mark.nv{border-color:var(--brown)} .mark.nv::after{width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:7px solid var(--brown)}
+.results{display:flex;flex-direction:column;gap:18px;min-width:0}
+.targets{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:520px){.targets{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.tile .v{font:700 26px/1.1 var(--display);font-variant-numeric:tabular-nums}
+.tile .v small{font:500 13px var(--body);color:var(--muted);margin-left:3px}
+.tile .k{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%}
+.bar{display:flex;height:10px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.facts{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13.5px;color:var(--muted);margin:0}
+.facts b{color:var(--ink);font-family:var(--mono);font-weight:500;font-size:13px}
+.daybar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
+.days{display:flex;flex-wrap:wrap;gap:4px}
+.days button{font:600 13px var(--body);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer}
+.days button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn{font:600 13px var(--body);color:var(--leaf);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 11px;cursor:pointer}
+.btn:hover{border-color:var(--leaf)}
+.meals{display:flex;flex-direction:column;gap:10px}
+.meal{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:4px 16px;align-items:start}
+@media (max-width:620px){.meal{grid-template-columns:minmax(0,1fr) auto}.meal .slot{grid-column:1/-1}}
+.slot{font-size:12px;letter-spacing:.07em;text-transform:uppercase;font-weight:600;color:var(--muted);padding-top:3px}
+.slot small{display:block;letter-spacing:0;text-transform:none;font-weight:400;font-family:var(--mono)}
+.mname{display:flex;align-items:center;gap:8px;font:700 16px/1.3 var(--display)}
+.meal ul{margin:6px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:2px}
+.meal li{display:flex;gap:10px;justify-content:space-between;font-size:14px;border-bottom:1px dashed var(--line);padding:3px 0}
+.meal li:last-child{border-bottom:0}
+.meal li .q{font-family:var(--mono);font-size:13px;color:var(--ink);white-space:nowrap}
+.meal li .p{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+.mmac{grid-column:2/3;font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:4px}
+@media (max-width:620px){.mmac{grid-column:1/-1}}
+.note{font-size:13px;color:var(--muted);margin:4px 0 0}
+.total{display:flex;flex-wrap:wrap;gap:8px 22px;align-items:center;font-size:14px}
+.total b{font-family:var(--mono);font-weight:500}
+.warn{border-left:3px solid var(--haldi);background:var(--surface);padding:10px 14px;border-radius:0 10px 10px 0;font-size:14px;margin:0}
+.tips{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.tips ul{margin:8px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:5px;font-size:14px}
+.fine{font-size:12.5px;color:var(--muted);margin:0}
+@media (prefers-reduced-motion:no-preference){.meal{transition:border-color .15s}.meal:hover{border-color:var(--leaf)}}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <h1>Diet <span>Maker</span></h1>
+    <p>Fill in your details and get daily calorie and macro targets with an Indian meal plan built around them.</p>
+  </header>
+
+  <div class="grid">
+    <form class="panel" id="f" autocomplete="off">
+      <p class="example" id="exampleNote">These are example details. Change them to yours and the plan updates as you type.</p>
+
+      <div>
+        <span class="lbl">I am a</span>
+        <div class="seg">
+          <label><input type="radio" name="sex" id="sex-m" value="m" checked><span>Boy</span></label>
+          <label><input type="radio" name="sex" id="sex-f" value="f"><span>Girl</span></label>
+        </div>
+      </div>
+
+      <div class="row2">
+        <div><label for="w">Weight (kg)</label><input type="number" id="w" min="30" max="200" step="0.5" value="65"></div>
+        <div><label for="h">Height (cm)</label><input type="number" id="h" min="120" max="220" value="172"></div>
+        <div><label for="age">Age</label><input type="number" id="age" min="13" max="80" value="20"></div>
+      </div>
+
+      <div>
+        <label for="act">Activity</label>
+        <select id="act">
+          <option value="1.2">Mostly sitting, no workouts</option>
+          <option value="1.375">Light: gym 1 to 3 days a week</option>
+          <option value="1.55" selected>Moderate: gym 3 to 5 days a week</option>
+          <option value="1.725">Very active: gym 6 to 7 days a week</option>
+          <option value="1.9">Athlete or physical job plus training</option>
+        </select>
+      </div>
+
+      <div>
+        <span class="lbl">Food preference</span>
+        <div class="seg">
+          <label><input type="radio" name="diet" id="diet-veg" value="veg" checked><span><i class="mark veg"></i>Veg</span></label>
+          <label><input type="radio" name="diet" id="diet-egg" value="egg"><span><i class="mark nv"></i>Eggetarian</span></label>
+          <label><input type="radio" name="diet" id="diet-nonveg" value="nonveg"><span><i class="mark nv"></i>Non-veg</span></label>
+        </div>
+      </div>
+
+      <div>
+        <span class="lbl">Preferred protein sources</span>
+        <div class="seg" id="srcs" role="group" aria-label="Preferred protein sources"></div>
+        <p class="hint">Pick one or more. Meals are built around what you tick; dal, curd and milk are always included.</p>
+      </div>
+
+      <div>
+        <span class="lbl">Goal</span>
+        <div class="seg">
+          <label><input type="radio" name="goal" id="goal-gain" value="gain" checked><span>Gaining</span></label>
+          <label><input type="radio" name="goal" id="goal-cut" value="cut"><span>Cutting</span></label>
+          <label><input type="radio" name="goal" id="goal-recomp" value="recomp"><span>Recomposing</span></label>
+        </div>
+      </div>
+
+      <div>
+        <span class="lbl">Protein powder</span>
+        <div class="row2" style="grid-template-columns:1fr 1fr">
+          <div>
+            <label for="scoops" style="font-size:11px">Scoops a day</label>
+            <select id="scoops">
+              <option value="0">None</option>
+              <option value="0.5">Half scoop</option>
+              <option value="1" selected>1 scoop</option>
+              <option value="1.5">1.5 scoops</option>
+              <option value="2">2 scoops</option>
+            </select>
+          </div>
+          <div><label for="ps" style="font-size:11px">Protein per scoop (g)</label><input type="number" id="ps" min="10" max="40" value="24"></div>
+        </div>
+        <p class="hint">Check the label on your tub. Most whey has 22 to 25 g per scoop.</p>
+      </div>
+
+      <div>
+        <span class="lbl">Where do you eat</span>
+        <div class="seg">
+          <label><input type="radio" name="live" id="live-hostel" value="hostel" checked><span>Hosteller (mess)</span></label>
+          <label><input type="radio" name="live" id="live-home" value="home"><span>Household (home food)</span></label>
+        </div>
+      </div>
+    </form>
+
+    <section class="results" aria-live="polite">
+      <div class="targets" id="targets"></div>
+      <div class="bar" id="bar" aria-hidden="true"></div>
+      <p class="facts" id="facts"></p>
+      <p class="warn" id="warn" hidden></p>
+
+      <div class="daybar">
+        <h2>Your meal plan</h2>
+        <div class="days" id="days" role="group" aria-label="Day of the week"></div>
+      </div>
+      <div class="meals" id="meals"></div>
+      <div class="panel total" id="total"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="btn" type="button" id="pdf" hidden>Export PDF (full week)</button>
+        <button class="btn" type="button" id="copy">Copy this day's plan</button>
+        <span class="fine" id="copied"></span>
+      </div>
+
+      <div class="tips" id="tips"></div>
+      <p class="fine">Targets use the Mifflin-St Jeor formula and standard sports nutrition ranges. Quantities are estimates for home-style cooking; mess portions vary, so weigh things once to calibrate your eye. If you have a medical condition, check the plan with a doctor or dietitian.</p>
+    </section>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+// Foods: macros are for `per` units. g: p = protein lever, c = carb/energy lever, f = fixed portion.
+const F={
+  roti:{n:"roti",pl:"rotis",per:1,u:"",k:90,p:3,c:18,f:.5,step:1,g:"c",max:5},
+  paratha:{n:"plain paratha",pl:"plain parathas",per:1,u:"",k:180,p:4,c:26,f:7,step:1,g:"c",max:3},
+  rice:{n:"cooked rice",per:100,u:"g",k:130,p:2.7,c:28,f:.3,step:25,g:"c",max:300},
+  bread:{n:"brown bread slice",pl:"brown bread slices",per:1,u:"",k:70,p:3,c:12,f:1,step:1,g:"c",max:4},
+  oats:{n:"rolled oats (dry)",per:100,u:"g",k:389,p:16.9,c:66,f:6.9,step:10,g:"c",max:100},
+  banana:{n:"banana",pl:"bananas",per:1,u:"",k:105,p:1.3,c:27,f:.4,step:1,g:"c",max:2},
+  poha:{n:"poha",per:1,u:"plate",k:250,p:5,c:42,f:7,step:.5,g:"c",max:2},
+  idli:{n:"idli",pl:"idlis",per:1,u:"",k:40,p:1.5,c:8,f:.2,step:1,g:"c",max:6},
+  dal:{n:"dal",per:1,u:"katori",k:130,p:7,c:18,f:3,step:.5,g:"p",max:2.5},
+  rajma:{n:"rajma or chole",per:1,u:"katori",k:190,p:9,c:27,f:5,step:.5,g:"p",max:2.5},
+  sambar:{n:"sambar",per:1,u:"katori",k:110,p:5,c:15,f:3,step:.5,g:"p",max:2},
+  paneer:{n:"paneer",per:100,u:"g",k:265,p:18,c:1.2,f:20,step:25,g:"p",max:200},
+  soya:{n:"soya chunks (dry weight)",per:100,u:"g",k:345,p:52,c:33,f:.5,step:10,g:"p",max:80},
+  curd:{n:"curd (dahi)",per:100,u:"g",k:60,p:3.5,c:4.5,f:3,step:50,g:"p",max:300},
+  milk:{n:"toned milk",per:250,u:"ml",k:150,p:8,c:12,f:7.5,step:50,g:"p",max:500},
+  egg:{n:"whole egg",pl:"whole eggs",per:1,u:"",k:72,p:6.3,c:.4,f:4.8,step:1,g:"p",max:4},
+  white:{n:"egg white",pl:"egg whites",per:1,u:"",k:17,p:3.6,c:.2,f:0,step:1,g:"p",max:6},
+  chicken:{n:"chicken breast (raw weight)",per:100,u:"g",k:120,p:23,c:0,f:2.6,step:25,g:"p",max:250},
+  chcurry:{n:"chicken curry",per:1,u:"bowl",k:240,p:22,c:6,f:14,step:.5,g:"p",max:2},
+  fish:{n:"fish (raw weight)",per:100,u:"g",k:110,p:18,c:0,f:4,step:25,g:"p",max:250},
+  chana:{n:"roasted chana",per:100,u:"g",k:370,p:20,c:58,f:5,step:10,g:"p",max:80},
+  sprouts:{n:"moong sprouts",per:100,u:"g",k:30,p:3,c:6,f:.2,step:50,g:"p",max:250},
+  chilla:{n:"besan chilla",pl:"besan chillas",per:1,u:"",k:130,p:6,c:15,f:5,step:1,g:"p",max:4},
+  pb:{n:"peanut butter",per:1,u:"tbsp",k:95,p:4,c:3,f:8,step:.5,g:"f"},
+  peanuts:{n:"roasted peanuts",per:100,u:"g",k:585,p:24,c:16,f:49,step:5,g:"f"},
+  sabzi:{n:"sabzi",per:1,u:"katori",k:100,p:2.5,c:10,f:6,step:.5,g:"f"},
+  salad:{n:"salad (cucumber, onion, tomato)",per:1,u:"plate",k:30,p:1,c:6,f:0,step:1,g:"f"},
+  fruit:{n:"seasonal fruit",pl:"seasonal fruits",per:1,u:"",k:80,p:.5,c:20,f:.3,step:1,g:"f"},
+  chaas:{n:"chaas (buttermilk)",per:250,u:"ml",k:40,p:2,c:3,f:2,step:50,g:"f"},
+  ghee:{n:"ghee",per:1,u:"tsp",k:45,p:0,c:0,f:5,step:1,g:"f"}
+};
+const PLURAL={katori:"katoris",plate:"plates",bowl:"bowls",tbsp:"tbsp",tsp:"tsp"};
+
+// Meal options. d: veg | egg | nonveg. l: hostel | home | both.
+const MEALS=[
+ {slot:"Breakfast",time:"8 am",opts:[
+  {n:"Overnight oats with milk, banana and peanut butter",d:"veg",l:"both",i:[["oats",50],["milk",250],["banana",1],["pb",1]],note:"Soak the oats in milk the night before. No stove needed."},
+  {n:"Poha with peanuts and a glass of milk",d:"veg",l:"both",i:[["poha",1],["peanuts",15],["milk",250]]},
+  {n:"Mess paratha with curd",d:"veg",l:"hostel",i:[["paratha",2],["curd",150],["fruit",1]]},
+  {n:"Idli sambar with milk",d:"veg",l:"both",i:[["idli",4],["sambar",1],["milk",200]]},
+  {n:"Besan chilla with curd",d:"veg",l:"home",i:[["chilla",2],["curd",150],["fruit",1]]},
+  {n:"Paneer bhurji with roti",d:"veg",l:"home",i:[["paneer",75],["roti",2],["milk",200]]},
+  {n:"Soya bhurji with roti",d:"veg",l:"home",i:[["soya",30],["roti",2],["milk",200]]},
+  {n:"Paneer sandwich with milk",d:"veg",l:"both",i:[["paneer",60],["bread",2],["milk",200]],note:"Fresh paneer from a dairy shop needs no cooking."},
+  {n:"Masala omelette with toast",d:"egg",l:"home",i:[["egg",2],["white",2],["bread",2],["milk",200]]},
+  {n:"Boiled eggs, bread and banana",d:"egg",l:"hostel",i:[["egg",3],["bread",2],["banana",1]],note:"Boiled eggs from the canteen or a stall work fine."}
+ ]},
+ {slot:"Lunch",time:"1 pm",opts:[
+  {n:"Mess thali: roti, rice, dal, sabzi and curd",d:"veg",l:"hostel",i:[["roti",3],["rice",100],["dal",1.5],["sabzi",1],["curd",100],["salad",1]],note:"Ask for an extra katori of dal instead of a second helping of rice."},
+  {n:"Mess thali with the paneer dish",d:"veg",l:"hostel",i:[["paneer",75],["roti",3],["rice",100],["dal",1],["salad",1]]},
+  {n:"Rajma chawal with curd",d:"veg",l:"home",i:[["rajma",1.5],["rice",150],["curd",100],["salad",1]]},
+  {n:"Paneer sabzi, dal and roti",d:"veg",l:"home",i:[["paneer",100],["roti",3],["dal",1],["salad",1]]},
+  {n:"Soya chunk curry with roti and curd",d:"veg",l:"home",i:[["soya",40],["roti",3],["curd",100],["salad",1]]},
+  {n:"Mess thali with soya chunk curry",d:"veg",l:"hostel",i:[["soya",30],["roti",3],["rice",100],["dal",1],["salad",1]]},
+  {n:"Egg curry with rice and dal",d:"egg",l:"both",i:[["egg",2],["rice",150],["dal",1],["salad",1]]},
+  {n:"Chicken curry with rice and roti",d:"nonveg",l:"both",i:[["chcurry",1],["rice",100],["roti",2],["salad",1]]},
+  {n:"Grilled chicken, rice and dal",d:"nonveg",l:"home",i:[["chicken",150],["rice",150],["dal",1],["salad",1]]},
+  {n:"Fish curry with rice and sabzi",d:"nonveg",l:"both",i:[["fish",150],["rice",150],["sabzi",1]]}
+ ]},
+ {slot:"Snack",time:"5 pm",opts:[
+  {n:"Roasted chana and a fruit",d:"veg",l:"both",i:[["chana",40],["fruit",1]],note:"Keep a jar of roasted chana in your room."},
+  {n:"Milk with peanut butter toast",d:"veg",l:"both",i:[["milk",250],["bread",1],["pb",1]]},
+  {n:"Sprouts chaat with chaas",d:"veg",l:"both",i:[["sprouts",150],["chana",20],["chaas",250]]},
+  {n:"Curd with fruit and peanuts",d:"veg",l:"both",i:[["curd",200],["fruit",1],["peanuts",10]]},
+  {n:"Paneer tikka with salad",d:"veg",l:"home",i:[["paneer",75],["salad",1]]},
+  {n:"Roasted soya nuts and a fruit",d:"veg",l:"both",i:[["soya",30],["fruit",1]],note:"Roasted soya nuts are sold in packets; no cooking needed."},
+  {n:"Boiled eggs with a fruit",d:"egg",l:"both",i:[["egg",2],["fruit",1]]},
+  {n:"Chicken sandwich",d:"nonveg",l:"home",i:[["chicken",100],["bread",2],["salad",1]]},
+  {n:"Chicken tikka with chaas",d:"nonveg",l:"hostel",i:[["chicken",100],["chaas",250],["salad",1]],note:"Grab it from a dhaba or tandoor stall near campus."}
+ ]},
+ {slot:"Dinner",time:"8:30 pm",opts:[
+  {n:"Mess dinner: roti, dal and sabzi",d:"veg",l:"hostel",i:[["roti",3],["dal",1.5],["sabzi",1],["salad",1]]},
+  {n:"Mess dinner with extra curd",d:"veg",l:"hostel",i:[["roti",3],["dal",1],["sabzi",1],["curd",150]]},
+  {n:"Mess rice and dal with the paneer dish",d:"veg",l:"hostel",i:[["paneer",75],["rice",150],["dal",1],["sabzi",.5]]},
+  {n:"Mess dinner with soya chunk curry",d:"veg",l:"hostel",i:[["soya",30],["roti",3],["dal",1],["salad",1]]},
+  {n:"Moong dal khichdi with curd",d:"veg",l:"home",i:[["rice",100],["dal",1.5],["curd",150],["ghee",1]]},
+  {n:"Paneer tikka masala with roti",d:"veg",l:"home",i:[["paneer",100],["roti",3],["salad",1]]},
+  {n:"Soya pulao with raita",d:"veg",l:"home",i:[["soya",30],["rice",150],["curd",100],["salad",1]]},
+  {n:"Egg bhurji, dal and roti",d:"egg",l:"both",i:[["egg",3],["roti",3],["dal",1]]},
+  {n:"Chicken curry with roti",d:"nonveg",l:"both",i:[["chcurry",1],["roti",3],["salad",1]]},
+  {n:"Grilled fish with sabzi and roti",d:"nonveg",l:"home",i:[["fish",150],["roti",2],["sabzi",1]]},
+  {n:"Fish fry with rice and dal",d:"nonveg",l:"hostel",i:[["fish",125],["rice",150],["dal",1]]}
+ ]},
+ {slot:"Before bed",time:"10:30 pm",gainOnly:true,opts:[
+  {n:"Warm milk with banana and peanuts",d:"veg",l:"both",i:[["milk",250],["banana",1],["peanuts",20]]},
+  {n:"Peanut butter sandwich with milk",d:"veg",l:"both",i:[["bread",2],["pb",1],["milk",250]]}
+ ]}
+];
+// Protein sources a person can choose, per diet. Items map to the source they depend on.
+const SRC={paneer:"Paneer",soya:"Soya chunks",egg:"Eggs",chicken:"Chicken",fish:"Fish"};
+const SRC_BY_DIET={veg:["paneer","soya"],egg:["egg","paneer","soya"],nonveg:["chicken","egg","fish","paneer","soya"]};
+const ITEM_SRC={paneer:"paneer",soya:"soya",egg:"egg",white:"egg",chicken:"chicken",chcurry:"chicken",fish:"fish"};
+MEALS.forEach(m=>m.opts.forEach(o=>{o.src=[...new Set(o.i.map(([k])=>ITEM_SRC[k]).filter(Boolean))]}));
+let chosen=null; // set of chosen sources; null means all for the diet
+const DAYS=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+const RANK={veg:{veg:0},egg:{egg:0,veg:1},nonveg:{nonveg:0,egg:1,veg:2}};
+
+const $=id=>document.getElementById(id);
+const radio=n=>document.querySelector(`input[name=${n}]:checked`).value;
+let day=0, swaps={}; // swaps["day-slot"] = extra offset
+let lastText="";
+
+function read(){
+  const num=(id,d,lo,hi)=>{const v=parseFloat($(id).value);return isFinite(v)?Math.min(hi,Math.max(lo,v)):d};
+  return {sex:radio("sex"),w:num("w",65,30,200),h:num("h",172,120,220),age:num("age",20,13,80),
+    act:+$("act").value,diet:radio("diet"),goal:radio("goal"),scoops:+$("scoops").value,ps:num("ps",24,10,40),live:radio("live"),src:readSrc()};
+}
+
+function readSrc(){
+  const v=[...document.querySelectorAll("input[name=src]:checked")].map(x=>x.value);
+  return v.length?v:SRC_BY_DIET[radio("diet")];
+}
+function drawSrc(){
+  const diet=radio("diet"),list=SRC_BY_DIET[diet];
+  $("srcs").innerHTML=list.map(k=>`<label><input type="checkbox" name="src" id="src-${k}" value="${k}"${!chosen||chosen.includes(k)?" checked":""}><span>${SRC[k]}</span></label>`).join("");
+}
+function targets(s){
+  const bmr=10*s.w+6.25*s.h-5*s.age+(s.sex==="m"?5:-161);
+  const tdee=bmr*s.act;
+  let kcal,adj;
+  if(s.goal==="gain"){kcal=tdee*1.10;adj="10% surplus for a lean bulk"}
+  else if(s.goal==="cut"){kcal=Math.max(tdee*.80,bmr,s.sex==="m"?1500:1200);adj="20% deficit"}
+  else{kcal=tdee*.95;adj="5% below maintenance"}
+  kcal=Math.round(kcal/10)*10;
+  const bmi=s.w/((s.h/100)**2);
+  // For higher BMI, base protein on the weight at BMI 25 so the target stays realistic.
+  const refW=bmi>28?25*(s.h/100)**2:s.w;
+  const pkg={gain:1.8,cut:2.2,recomp:2.0}[s.goal];
+  const p=Math.round(refW*pkg);
+  const f=Math.round(Math.max(kcal*.25/9,.6*s.w));
+  const c=Math.max(0,Math.round((kcal-p*4-f*9)/4));
+  return {bmr,tdee,kcal,adj,bmi,p,f,c,pkg,refW};
+}
+
+function macros(key,q){const x=F[key],r=q/x.per;return{k:x.k*r,p:x.p*r,c:x.c*r,f:x.f*r}}
+function add(a,b){return{k:a.k+b.k,p:a.p+b.p,c:a.c+b.c,f:a.f+b.f}}
+const Z=()=>({k:0,p:0,c:0,f:0});
+const fmtN=v=>Number.isInteger(v)?String(v):v.toFixed(1).replace(/\.0$/,"");
+function qtyText(key,q){
+  const x=F[key];
+  if(x.u==="g"||x.u==="ml")return [`${q} ${x.u}`,x.n];
+  if(x.u==="")return [fmtN(q),q===1?x.n:(x.pl||x.n)];
+  return [`${fmtN(q)} ${q>1?PLURAL[x.u]:x.u}`,x.n];
+}
+
+function pickDay(s,d){
+  return MEALS.filter(m=>!m.gainOnly||s.goal==="gain").map((m,si)=>{
+    // Options built on a chosen source come first; plain options (dal, curd, milk) fill the rest.
+    const ok=m.opts.filter(o=>(o.l==="both"||o.l===s.live)&&RANK[s.diet][o.d]!==undefined&&o.src.every(x=>s.src.includes(x)));
+    const pref=ok.filter(o=>o.src.length).map((o,i)=>({o,i})).sort((a,b)=>RANK[s.diet][a.o.d]-RANK[s.diet][b.o.d]||a.i-b.i).map(x=>x.o);
+    const opts=[...pref,...ok.filter(o=>!o.src.length)];
+    const pool=(si===1||si===3)&&pref.length?pref.length:opts.length;
+    const off=(swaps[d+"-"+si]||0);
+    return {slot:m.slot,time:m.time,opt:opts[((d+(si===3?1:0)+(si===2?2:0))%pool+off)%opts.length],count:opts.length};
+  });
+}
+
+function solve(s,t,picks){
+  const powder=s.scoops?{k:0,p:s.scoops*s.ps,c:s.scoops*2.5,f:s.scoops*1.5}:Z();
+  powder.k=powder.p*4+powder.c*4+powder.f*9;
+  let P=Z(),C=Z(),X=Z();
+  picks.forEach(m=>m.opt.i.forEach(([k,q])=>{const g=F[k].g,mm=macros(k,q);if(g==="p")P=add(P,mm);else if(g==="c")C=add(C,mm);else X=add(X,mm)}));
+  const Pt=t.p-powder.p-X.p, Kt=t.kcal-powder.k-X.k;
+  const clamp=(v,lo,hi)=>Math.min(hi,Math.max(lo,v));
+  let a,b;const det=P.p*C.k-C.p*P.k;
+  if(det>0){a=(Pt*C.k-C.p*Kt)/det;b=(P.p*Kt-Pt*P.k)/det}else{a=b=Kt/(P.k+C.k)}
+  // Keep meals proportionate: both levers stay near the overall calorie scale s0,
+  // and calories win over protein when the two can't both be met.
+  const s0=Kt/(P.k+C.k);
+  a=clamp(a,Math.max(.4,.65*s0),Math.min(2.4,1.6*s0));
+  b=clamp((Kt-a*P.k)/C.k,Math.max(.3,.55*s0),Math.min(2.6,1.6*s0));
+  a=clamp((Kt-b*C.k)/P.k,Math.max(.4,.65*s0),Math.min(2.4,1.6*s0));
+  const meals=picks.map(m=>{
+    let tot=Z();
+    const items=m.opt.i.map(([k,q])=>{
+      const x=F[k],sc=x.g==="p"?a:x.g==="c"?b:1;
+      let qq=Math.min(x.max||Infinity,Math.max(x.step,Math.round(q*sc/x.step)*x.step));
+      qq=Math.round(qq*10)/10;
+      const mm=macros(k,qq);tot=add(tot,mm);
+      return {key:k,q:qq,m:mm};
+    });
+    return {...m,items,tot};
+  });
+  let day=meals.reduce((acc,m)=>add(acc,m.tot),Z());
+  day=add(day,powder);
+  return {meals,powder,day};
+}
+
+function render(){
+  const s=read(), t=targets(s);
+  try{localStorage.setItem("dietmaker",JSON.stringify(s))}catch(e){}
+  const pk=t.p*4,fk=t.f*9,ck=t.c*4,sum=pk+fk+ck||1;
+  $("targets").innerHTML=[
+    ["Calories",t.kcal,"kcal",null],
+    ["Protein",t.p,"g","var(--leaf)"],
+    ["Carbs",t.c,"g","var(--haldi)"],
+    ["Fat",t.f,"g","var(--chili)"]
+  ].map(([k,v,u,c])=>`<div class="tile"><div class="k">${c?`<i class="dot" style="background:${c}"></i>`:""}${k}</div><div class="v">${v.toLocaleString("en-IN")}<small>${u}</small></div></div>`).join("");
+  $("bar").innerHTML=`<i style="width:${pk/sum*100}%;background:var(--leaf)"></i><i style="width:${ck/sum*100}%;background:var(--haldi)"></i><i style="width:${fk/sum*100}%;background:var(--chili)"></i>`;
+  const rate={gain:"Aim to gain about 0.25 to 0.5 kg a week.",cut:`Aim to lose about ${(s.w*.005).toFixed(1)} to ${(s.w*.0075).toFixed(1)} kg a week.`,recomp:"Your weight should stay roughly steady while strength goes up."}[s.goal];
+  $("facts").innerHTML=`<span>BMR <b>${Math.round(t.bmr)} kcal</b></span><span>Maintenance <b>${Math.round(t.tdee)} kcal</b></span><span>Plan <b>${t.adj}</b></span><span>Protein <b>${t.pkg} g/kg${t.refW!==s.w?" of goal weight":""}</b></span><span>BMI <b>${t.bmi.toFixed(1)}</b></span><span>Water <b>${(s.w*.035+ (s.act>1.3?.5:0)).toFixed(1)} L</b></span><span>${rate}</span>`;
+
+  $("days").innerHTML=DAYS.map((d,i)=>`<button type="button" aria-pressed="${i===day}" data-d="${i}">${d}</button>`).join("");
+
+  const picks=pickDay(s,day), r=solve(s,t,picks);
+  const mark=d=>`<i class="mark ${d==="veg"?"veg":"nv"}" title="${d==="veg"?"Veg":"Contains egg or meat"}"></i>`;
+  const mac=m=>`${Math.round(m.k)} kcal · P ${Math.round(m.p)} g · C ${Math.round(m.c)} g · F ${Math.round(m.f)} g`;
+  let html="",txt=[`Diet Maker plan, ${DAYS[day]}: ${t.kcal} kcal, protein ${t.p} g, carbs ${t.c} g, fat ${t.f} g`,""];
+  r.meals.forEach((m,si)=>{
+    html+=`<article class="meal"><div class="slot">${m.slot}<small>${m.time}</small></div>
+      <div><div class="mname">${mark(m.opt.d)}<span>${m.opt.n}</span></div>
+      <ul>${m.items.map(it=>{const [q,n]=qtyText(it.key,it.q);return `<li><span><span class="q">${q}</span> ${n}</span><span class="p">${Math.round(it.m.p)} g P</span></li>`}).join("")}</ul>
+      ${m.opt.note?`<p class="note">${m.opt.note}</p>`:""}</div>
+      <div>${m.count>1?`<button class="btn" type="button" data-swap="${si}" aria-label="Swap ${m.slot.toLowerCase()} for another option">Swap</button>`:""}</div>
+      <div class="mmac">${mac(m.tot)}</div></article>`;
+    txt.push(`${m.slot} (${m.time}): ${m.opt.n}`);
+    m.items.forEach(it=>{const [q,n]=qtyText(it.key,it.q);txt.push(`  - ${q} ${n}`)});
+  });
+  if(s.scoops){
+    const n=s.scoops>1?"Split into two shakes: one after your workout, one with breakfast.":"Take it with water after your workout, or with breakfast on rest days.";
+    html+=`<article class="meal"><div class="slot">Shake<small>post-workout</small></div>
+      <div><div class="mname">${mark("veg")}<span>Protein shake</span></div>
+      <ul><li><span><span class="q">${fmtN(s.scoops)} ${s.scoops>1?"scoops":"scoop"}</span> protein powder in water</span><span class="p">${Math.round(r.powder.p)} g P</span></li></ul>
+      <p class="note">${n}</p></div><div></div><div class="mmac">${mac(r.powder)}</div></article>`;
+    txt.push(`Shake: ${fmtN(s.scoops)} scoop protein powder in water`);
+  }
+  $("meals").innerHTML=html;
+  const d=r.day, diff=v=>v>=0?"+"+Math.round(v):String(Math.round(v));
+  $("total").innerHTML=`<strong>Day total</strong><span>Calories <b>${Math.round(d.k)}</b> <span class="fine">(${diff(d.k-t.kcal)})</span></span><span>Protein <b>${Math.round(d.p)} g</b> <span class="fine">(${diff(d.p-t.p)})</span></span><span>Carbs <b>${Math.round(d.c)} g</b></span><span>Fat <b>${Math.round(d.f)} g</b></span>`;
+  txt.push("",`Day total: ${Math.round(d.k)} kcal, ${Math.round(d.p)} g protein`);
+  lastText=txt.join("\n");
+
+  const short=t.p-d.p;
+  const w=$("warn");
+  if(short>t.p*.08){
+    w.hidden=false;
+    w.textContent=`This day comes in about ${Math.round(short)} g short on protein. `+fixes(s);
+  }else w.hidden=true;
+
+  const tips={
+    hostel:["Fill half your mess plate with dal, curd and salad before you take rice.","Keep a no-cook stash in your room: peanut butter, roasted chana, oats, bananas and a shaker.","Buy milk and curd from the canteen; they are the cheapest protein you can get without a kitchen.","On days the mess serves paneer, egg or chicken, take that dish and skip the extra roti."],
+    home:["Measure oil: 2 to 3 tsp per person per meal keeps the fat in range.","Cook soya chunks and dal in bulk for 2 to 3 days.","Ask for your share of paneer, eggs or chicken to be kept aside before the curry goes to the table.","Weigh rice and paneer once so you learn what the portions look like."]
+  }[s.live];
+  const goalTips={
+    gain:["If your weight does not move in two weeks, add one more roti or 25 g rice to lunch and dinner.","Train with progressive overload so the surplus goes into muscle.","Sleep 7 to 9 hours."],
+    cut:["If weight stalls for two weeks, cut one roti a day or add a 30 minute walk.","Keep protein high even when you are hungry; it protects muscle.","Fill up on salad, sabzi and chaas; they are low in calories."],
+    recomp:["Lift heavy 3 to 5 days a week; recomposition only works with training.","Track your waist and gym numbers instead of the scale.","Eat most of your carbs around your workout."]
+  }[s.goal];
+  $("tips").innerHTML=`<div class="panel"><h2>${s.live==="hostel"?"Hostel tips":"Home kitchen tips"}</h2><ul>${tips.map(x=>`<li>${x}</li>`).join("")}</ul></div>
+    <div class="panel"><h2>${{gain:"Gaining tips",cut:"Cutting tips",recomp:"Recomp tips"}[s.goal]}</h2><ul>${goalTips.map(x=>`<li>${x}</li>`).join("")}</ul></div>`;
+}
+
+function fixes(s){
+  const add={paneer:"50 g more paneer",soya:"25 g more soya chunks",egg:"3 egg whites",chicken:"75 g more chicken",fish:"75 g more fish"};
+  const opts=s.src.map(k=>add[k]);
+  if(s.scoops<2)opts.unshift("half to one more scoop of protein powder");
+  const list=opts.length>1?opts.slice(0,-1).join(", ")+" or "+opts[opts.length-1]:opts[0];
+  return `Add ${list} to close the gap.`;
+}
+function load(){
+  let s=null;try{s=JSON.parse(localStorage.getItem("dietmaker")||"null")}catch(e){}
+  if(!s)return;
+  ["w","h","age","ps"].forEach(k=>{if(s[k])$(k).value=s[k]});
+  if(s.act)$("act").value=String(s.act);
+  if(s.scoops!==undefined)$("scoops").value=String(s.scoops);
+  [["sex",s.sex],["diet",s.diet],["goal",s.goal],["live",s.live]].forEach(([n,v])=>{const el=$(n+"-"+v);if(el)el.checked=true});
+  if(Array.isArray(s.src))chosen=s.src;
+  $("exampleNote").hidden=true;
+}
+
+$("f").addEventListener("input",e=>{if(e.target.name==="diet"||e.target.name==="src")return;$("exampleNote").hidden=true;swaps={};render()});
+$("f").addEventListener("change",e=>{
+  if(e.target.name==="diet"){chosen=null;drawSrc()}
+  if(e.target.name==="src"){if(!document.querySelector("input[name=src]:checked"))e.target.checked=true;chosen=readSrc()}
+$("exampleNote").hidden=true;swaps={};render()});
+$("f").addEventListener("submit",e=>e.preventDefault());
+$("days").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;day=+b.dataset.d;render()});
+$("meals").addEventListener("click",e=>{const b=e.target.closest("[data-swap]");if(!b)return;const k=day+"-"+b.dataset.swap;swaps[k]=(swaps[k]||0)+1;render()});
+$("copy").addEventListener("click",()=>{
+  const done=m=>{$("copied").textContent=m;setTimeout(()=>$("copied").textContent="",2500)};
+  try{navigator.clipboard.writeText(lastText).then(()=>done("Copied. Paste it anywhere."),()=>done("Copy was blocked by this browser."))}catch(e){done("Copy was blocked by this browser.")}
+});
+load();drawSrc();render();
+
+// PDF export: builds the whole week with jsPDF and hands it to the viewer through the downloads capability.
+const DIET_N={veg:"Veg",egg:"Eggetarian",nonveg:"Non-veg"},GOAL_N={gain:"Gaining",cut:"Cutting",recomp:"Recomposing"};
+const ACT_N={"1.2":"Mostly sitting","1.375":"Light (gym 1-3 days/week)","1.55":"Moderate (gym 3-5 days/week)","1.725":"Very active (gym 6-7 days/week)","1.9":"Athlete"};
+function buildPdf(){
+  const s=read(),t=targets(s),{jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:"mm",format:"a4"}),W=210,M=16;let y=M;
+  const leaf=[45,106,58],ink=[28,38,32],muted=[95,107,99];
+  const need=h=>{if(y+h>297-M){doc.addPage();y=M}};
+  const line=(txt,{size=10,bold=false,color=ink,x=M,gap=1.5}={})=>{
+    doc.setFont("helvetica",bold?"bold":"normal");doc.setFontSize(size);doc.setTextColor(...color);
+    const rows=doc.splitTextToSize(txt,W-M-x);const h=rows.length*size*.42+gap;need(h);doc.text(rows,x,y+size*.35);y+=h;
+  };
+  line("Diet Maker",{size:22,bold:true,color:leaf,gap:2});
+  line(`${s.sex==="m"?"Boy":"Girl"}, ${s.age} yrs, ${s.h} cm, ${s.w} kg  |  ${ACT_N[String(s.act)]}`,{color:muted});
+  line(`${DIET_N[s.diet]}  |  Goal: ${GOAL_N[s.goal]}  |  ${s.live==="hostel"?"Hosteller (mess)":"Household"}  |  Protein sources: ${s.src.map(k=>SRC[k]).join(", ")}  |  Protein powder: ${s.scoops?fmtN(s.scoops)+" scoop/day":"none"}`,{color:muted,gap:5});
+  line(`Daily target: ${t.kcal} kcal   Protein ${t.p} g   Carbs ${t.c} g   Fat ${t.f} g`,{size:13,bold:true,gap:2});
+  line(`BMR ${Math.round(t.bmr)} kcal  |  Maintenance ${Math.round(t.tdee)} kcal  |  Plan: ${t.adj}  |  BMI ${t.bmi.toFixed(1)}  |  Water ${(s.w*.035+(s.act>1.3?.5:0)).toFixed(1)} L/day`,{color:muted,gap:6});
+  DAYS.forEach((dn,d)=>{
+    const r=solve(s,t,pickDay(s,d));
+    need(30);
+    doc.setDrawColor(...leaf);doc.setLineWidth(.4);doc.line(M,y,W-M,y);y+=2;
+    line(["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"][d],{size:14,bold:true,color:leaf,gap:2});
+    r.meals.forEach(m=>{
+      need(14);
+      line(`${m.slot} (${m.time}): ${m.opt.n}`,{size:11,bold:true,gap:.8});
+      m.items.forEach(it=>{const [q,n]=qtyText(it.key,it.q);line(`-  ${q} ${n}`,{x:M+4,gap:.5})});
+      line(`${Math.round(m.tot.k)} kcal  |  P ${Math.round(m.tot.p)} g  C ${Math.round(m.tot.c)} g  F ${Math.round(m.tot.f)} g`,{size:8.5,color:muted,x:M+4,gap:2.5});
+    });
+    if(s.scoops){line(`Shake (post-workout): ${fmtN(s.scoops)} scoop protein powder in water`,{size:11,bold:true,gap:2.5})}
+    line(`Day total: ${Math.round(r.day.k)} kcal  |  Protein ${Math.round(r.day.p)} g  |  Carbs ${Math.round(r.day.c)} g  |  Fat ${Math.round(r.day.f)} g`,{bold:true,gap:6});
+  });
+  line("Targets use the Mifflin-St Jeor formula and standard sports nutrition ranges. Quantities are estimates; if you have a medical condition, check the plan with a doctor or dietitian.",{size:8,color:muted});
+  return doc.output("arraybuffer");
+}
+(async()=>{
+  // Inside claude.ai the page saves through the downloads capability; on a normal website jsPDF saves directly.
+  const dl=window.claude?.use?await window.claude.use("downloads"):{save:async({filename,data})=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type:"application/pdf"}));a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);return{status:"saved"}}};
+  if(!dl||!window.jspdf)return;
+  const b=$("pdf");b.hidden=false;
+  b.addEventListener("click",async()=>{
+    const say=m=>{$("copied").textContent=m;setTimeout(()=>$("copied").textContent="",3000)};
+    try{
+      const r=await dl.save({filename:`diet-plan-${GOAL_N[read().goal].toLowerCase()}.pdf`,data:buildPdf()});
+      if(r.status==="saved")say("PDF saved.");
+    }catch(e){
+      if(e&&e.code==="declined")return;
+      if(e&&e.code==="rate_limited")say("A save prompt is already open.");
+      else say("PDF export isn't available here.");
+    }
+  });
+})();
+</script>
+
+</body>
+</html>
